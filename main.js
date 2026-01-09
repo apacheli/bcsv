@@ -1,90 +1,98 @@
-const encoder = new TextEncoder();
-
-const setUint64 = (int, array = [], index = array.length) => {
+const u64 = (int, arr = []) => {
   for (let i = 7; i >= 0; i--) {
-    array[index + i] = Number(int & 255n);
-    int >>= 8n;
+    arr.push(Number(int >> BigInt(i * 8) & 255n));
   }
-  return array;
+  return arr;
 };
 
-const setUint16 = (int, array = [], index = array.length) => {
+const u32 = (int, arr = []) => {
+  for (let i = 3; i >= 0; i--) {
+    arr.push(int >> (i * 8) & 255);
+  }
+  return arr;
+};
+
+const u16 = (int, arr = []) => {
   for (let i = 1; i >= 0; i--) {
-    array[index + i] = int & 255;
-    int >>= 8;
+    arr.push(int >> (i * 8) & 255);
   }
-  return array;
+  return arr;
 };
 
-const TYPES = {
-  STRING: 0x01,
-  INTEGER: 0x02,
+const u8 = (int, arr = []) => {
+  arr.push(int & 255);
+  return arr;
 };
 
-class BCSVEditor {
-  headers = [];
+const BcsvType = {
+  str_8: 0x10,
+  str_16: 0x11,
+  int_8: 0x20,
+  int_16: 0x21,
+};
+
+class BSCVEncoder {
+  encoder = new TextEncoder();
   rows = [];
 
-  addHeader(name, type) {
-    this.headers.push({ name, type });
+  constructor(...headers) {
+    this.headers = headers;
   }
 
   addRow(...values) {
-    this.rows.push({ values });
+    this.rows.push(values);
   }
 
   serialize() {
-    const array = [
-      66, 67, 83, 86,
-      1,
+    // deno-fmt-ignore
+    const arr = [
+      0x42, 0x43, 0x53, 0x56,
+      0x02,
       this.headers.length,
-      0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    setUint64(BigInt(this.rows.length), array, 6);
+    u64(BigInt(this.rows.length), arr);
 
-    for (let i = 0, j = this.headers.length; i < j; i++) {
-      const header = this.headers[i];
-
-      const name = encoder.encode(header.name);
-      const len = name.byteLength;
-  
-      const o = array.length;
-      array.length += 1 + len;
-  
-      array[o] = header.type;
-      array[o + 1] = len;
-
-      for (let n = 0; n < len; n++) {
-        array[o + 2 + n] = name[n];
-      }
+    for (const header of this.headers) {
+      arr.push(
+        header.type,
+        header.label.length,
+        ...this.encoder.encode(header.label),
+      );
     }
 
     for (const row of this.rows) {
       for (let i = 0; i < this.headers.length; i++) {
         const header = this.headers[i];
-        const value = row.values[i];
+        const value = row[i];
 
         switch (header.type) {
-          case TYPES.STRING: {
-            const e = encoder.encode(value);
-            setUint16(e.byteLength, array);
-            array.push(...e);
+          case BcsvType.str_8: {
+            const e = this.encoder.encode(value);
+            u8(e.byteLength, arr);
+            arr.push(...e);
             break;
           }
 
-          case TYPES.INTEGER: {
-            setUint64(value, array);
+          case BcsvType.str_16: {
+            const e = this.encoder.encode(value);
+            u16(e.byteLength, arr);
+            arr.push(...e);
+            break;
+          }
+
+          case BcsvType.int_8: {
+            u8(value, arr);
+            break;
+          }
+
+          case BcsvType.int_8: {
+            u16(value, arr);
             break;
           }
         }
       }
     }
 
-    return array;
+    return new Uint8Array(arr);
   }
 }
-
-export {
-  BCSVEditor,
-  TYPES,
-};
