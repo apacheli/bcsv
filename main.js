@@ -24,22 +24,33 @@ const u8 = (int, arr = []) => {
   return arr;
 };
 
+// deno-fmt-ignore
 const BcsvType = {
-  str_8: 0x10,
-  str_16: 0x11,
-  int_8: 0x20,
-  int_16: 0x21,
+  str_8:   0x10,
+  str_16:  0x11,
+  str_32:  0x12,
+  str_64:  0x13,
+
+  uint_8:  0x20,
+  uint_16: 0x21,
+  uint_32: 0x22,
+  uint_64: 0x23,
+
+  int_8:   0x30,
+  int_16:  0x31,
+  int_32:  0x32,
+  int_64:  0x33,
 };
 
 class BSCVEncoder {
   encoder = new TextEncoder();
   rows = [];
 
-  constructor(...headers) {
+  constructor(headers) {
     this.headers = headers;
   }
 
-  addRow(...values) {
+  addRow(values) {
     this.rows.push(values);
   }
 
@@ -80,13 +91,41 @@ class BSCVEncoder {
             break;
           }
 
+          case BcsvType.str_32: {
+            const e = this.encoder.encode(value);
+            u32(e.byteLength, arr);
+            arr.push(...e);
+            break;
+          }
+
+          case BcsvType.str_64: {
+            const e = this.encoder.encode(value);
+            u64(e.byteLength, arr);
+            arr.push(...e);
+            break;
+          }
+
+          case BcsvType.uint_8:
           case BcsvType.int_8: {
             u8(value, arr);
             break;
           }
 
-          case BcsvType.int_8: {
+          case BcsvType.uint_16:
+          case BcsvType.int_16: {
             u16(value, arr);
+            break;
+          }
+
+          case BcsvType.uint_32:
+          case BcsvType.int_32: {
+            u32(value, arr);
+            break;
+          }
+
+          case BcsvType.uint_64:
+          case BcsvType.int_64: {
+            u32(value, arr);
             break;
           }
         }
@@ -96,3 +135,8 @@ class BSCVEncoder {
     return new Uint8Array(arr);
   }
 }
+
+export {
+  BcsvType,
+  BSCVEncoder,
+};

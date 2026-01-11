@@ -12,20 +12,32 @@ It's like CSV but in binary.
 
 ## Types
 
-| Name   | Byte   |
-| ------ | ------ |
-| str_8  | `0x10` |
-| str_16 | `0x11` |
-| int_8  | `0x20` |
-| int_16 | `0x21` |
+| Name    | Byte   |
+| ------- | ------ |
+| str_8   | `0x10` |
+| str_16  | `0x11` |
+| str_32  | `0x12` |
+| str_64  | `0x13` |
+| uint_8  | `0x20` |
+| uint_16 | `0x21` |
+| uint_32 | `0x22` |
+| uint_64 | `0x23` |
+| int_8   | `0x30` |
+| int_16  | `0x31` |
+| int_32  | `0x32` |
+| int_64  | `0x33` |
 
-### str Types (str_8, str_16)
+### str Types (str_8, str_16, str_32, str_64)
 
 Used to define strings.
 
-### int Types (int_8, int_16)
+### uint Types (uint_8, uint_16, uint_32, uint_64)
 
-Used to define integers.
+Used to define unsigned integers.
+
+### int Types (int_8, int_16, int_32, int_64)
+
+Used to define signed integers.
 
 ## Example
 
